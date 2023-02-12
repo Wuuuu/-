@@ -40,6 +40,7 @@ class Promise {
         onRejected(this.reason)
       } else {
         this.onResolvedCallbacks.push(onFulfilled)
+        this.onResolvedCallbacks.push(onRejected)
       }
     }
   }
