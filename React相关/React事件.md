@@ -33,20 +33,56 @@ DOM 事件流中同时包含了事件捕获阶段和事件冒泡阶段，作为�
 element.addEventListener(event,function, useCapture)
 ```
 
-参数| 描述 
----- | ----
-|event | 必须；字符串，指定事件名<br>**注意**：不要使用“on”前缀。例如，使用”click“而不是“onclick”|
-|function|必须；指定要事件触发时执行的函数。<br>当事件对象作为第一个参数传入函数。事件对象的类型取决于特定的事件|
-|useCapture|可选；布尔值，指定事件是否在捕获或冒泡阶段执行<br> 可能值：<br> true - 事件句柄在捕获阶段执行<br>false -默认。事件句柄在冒泡阶段执行|
+| 参数       | 描述                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| event      | 必须；字符串，指定事件名<br>**注意**：不要使用“on”前缀。例如，使用”click“而不是“onclick”                                             |
+| function   | 必须；指定要事件触发时执行的函数。<br>当事件对象作为第一个参数传入函数。事件对象的类型取决于特定的事件                               |
+| useCapture | 可选；布尔值，指定事件是否在捕获或冒泡阶段执行<br> 可能值：<br> true - 事件句柄在捕获阶段执行<br>false -默认。事件句柄在冒泡阶段执行 |
 
-#### 3.React事件概述
-React根据W3C规范来定义自己的事件系统，期时间被称之为合成事件（SyntheticEvent）。而其自定义事件系统的动机主要包含以下几个方面：
+#### 3.React 事件概述
+
+React 根据 W3C 规范来定义自己的事件系统，期时间被称之为合成事件（SyntheticEvent）。而其自定义事件系统的动机主要包含以下几个方面：
 （1）**抹平不同浏览器之间的兼容差异**。最主要的动机。
-（2）**事件“合成”，即事件自定义**。事件合成既可以处理兼容问题，也可以用来自定义事件（例如React里面的onChange事件）
-（3）**提供一个抽象平台事件机制**。类似于VirtualDOM抽象了跨平台的渲染方式，合成事件（SyntheticEvent）提供一个抽象的跨平台事件机制。
-（4）**可以干预事件的分发**。16版本后引入Fiber架构，React可以用过干预事件的分发以优化用户的交互体验。
+（2）**事件“合成”，即事件自定义**。事件合成既可以处理兼容问题，也可以用来自定义事件（例如 React 里面的 onChange 事件）
+（3）**提供一个抽象平台事件机制**。类似于 VirtualDOM 抽象了跨平台的渲染方式，合成事件（SyntheticEvent）提供一个抽象的跨平台事件机制。
+（4）**可以干预事件的分发**。16 版本后引入 Fiber 架构，React 可以用过干预事件的分发以优化用户的交互体验。
 
-> 注：【几乎】所有事件都代理到了document，说明有例外，比如`audio`,`video`标签的一些媒体事件，是document所不具有，这些事件只能够在这些标签上进行代理，但依旧用统一的入口分发函数（dispatchEvent）进行绑定。
+> 注：【几乎】所有事件都代理到了 document，说明有例外，比如`audio`,`video`标签的一些媒体事件，是 document 所不具有，这些事件只能够在这些标签上进行代理，但依旧用统一的入口分发函数（dispatchEvent）进行绑定。
 
 #### 4.事件注册
-React的事件注册过程主要做了两件事：document上注册，存储事件回调。![enter image description here](https://img2020.cnblogs.com/blog/898684/202006/898684-20200624143507392-911347960.png)
+
+React 的事件注册过程主要做了两件事：document 上注册，存储事件回调。![enter image description here](https://img2020.cnblogs.com/blog/898684/202006/898684-20200624143507392-911347960.png)
+
+(1) document 上注册
+在 React 组件挂载阶段，根据组件内的生命的时间类型（onclick，onchange）等， 在 document 上注册事件（使用 addEventListener），并指定统一的回调函数 dispatchEvent。换句话说，document 上不管注册的是什么事件，都具有统一的回调函数 dispatchEvent。也正是因为这一时间委托机制，具有同样的回调函数 dispatchEvent，所以对于同一种事件类型，不论在 document 上注册几次，最终也只会保留一个有效的实例，这样能减少内存开销。
+
+实例代码：
+
+```js
+function TestComponent() {
+  handleParentClick = () => {
+    // ... dosomething
+  };
+
+  handleChildClick = () => {
+    // ... dosomething
+  };
+
+  return (
+    <div className="parent" onClick={handleParentClick}>
+      <div className="child" onClick={handleChildClick} />
+    </div>
+  );
+}
+```
+
+上述代码，事件类型都是`onclick`，由于React的事件委托机制，会指定统一的回调函数dispatchEvent，所以最终只会在document上保留一个click事件，类似`document.addEventListener('click', dispatchEvent)`，这里也可以看出React事件是在DOM事件流的冒泡阶段被触发。
+
+（2） 储存事件回调
+React为了在触发事件时可以查找到对应的回调去执行，会把组件内的所有事件统一地放到一个对象中（listenerBank）。而储存方式如上图，首先会根据事件类型分类存储，例如click事件相关的统一存储在一个对象中，回调函数的存储采用键值对（key/value）的方式存储在对象中，key是组件的唯一标志id, value对应的就是事件的回调函数。
+
+React的事件注册关键步骤如下图：![enter image description here](https://img2020.cnblogs.com/blog/898684/202006/898684-20200624143524310-1842672426.png)
+
+
+#### 5.事件分发
+事件分发也就是事件触发。React的事件触发指挥发生在DOM事件流的冒泡阶段，
