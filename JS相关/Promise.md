@@ -3,7 +3,7 @@
 ```js
 class Promise {
   constructor(executor) {
-    this.state = "pending"; // 'pending' | 'fulfuilled' | 'rejected'
+    this.state = "pending"; // 'pending' | 'fulfilled' | 'rejected'
     this.value = undefined;
     this.reason = undefined;
     this.onResolvedCallbacks = [];

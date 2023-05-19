@@ -90,3 +90,29 @@ function FiberNode(){
   this.alternate = null;                // 双缓存树，指向缓存的fiber。更新阶段两颗树互相交替
 }
 ```
+
+#### 三 Fiber更新机制
+##### 初始化
+fiber时如何工作的：
+**第一步：创建fiberRoot和rootFiber**
+- `fiberRoot`: 首次构建应用，创建一个fiberRoot,作为整个React应用的根基。
+- `rootFiber`: 通过render渲染出来，如上Index可以作为一个rootFiber。一个React应用可以有多个render创建的rootFiber,但是只能有一个fiberRoot(应用根节点)
+
+第一次挂载过程中，会将fiberRoot和rootFiber建立起关联
+> react-reconciler/src/ReactFiberRoot.js
+
+```js
+function createFiberRoot(containerInfo, tag) {
+  /* 创建一个Root */
+  const root = new FiberRootNode(containerInfo, tag);
+  const rootFiber = createHostRootFiber(tag);
+  root.current = rootFiber;
+  return root;
+}
+```
+
+**第二步： workInProgress和current**
+经过第一步处理，开始到正式渲染阶段，会进入beginwork流程
+
+- workInProgress: 正在内存中构建的Fiber树，称为workInProgress Fiber树。在一次更新中，所有的更新都是发生在workInProgress树上。再一次更新后，workInProgress树上的状态时最新的状态。那么将变成current树用于视图渲染
+- current: 正在视图层渲染的树叫做current树。
