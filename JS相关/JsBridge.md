@@ -14,7 +14,7 @@ JsBridge 是一种Webview和native进行通信的手段，Webview可以用过JsB
 
 #### 拦截URL SCHEME
 
-URL SCHEME是一种类似于url的链接，为了方便 app直接互相调用设计的，形式和普通Url想死，主要区别是protocol和host一般是自定义的，例如： qunarhy://hy
+URL SCHEME是一种类似于url的链接，为了方便 app直接互相调用设计的，形式和普通Url相似，主要区别是protocol和host一般是自定义的，例如： qunarhy://hy
 
 拦截URL SCHEME的主要流程是： Web端通过某种方式（比如iframe.src）发送URL Scheme请求，之后Native拦截到请求并根据URL Scheme进行相关操作
 
